@@ -1,0 +1,412 @@
+/* --- Aikon Engine SDK --- */
+class AikonEngine {
+    constructor(config) {
+        this.apiKey = config.apiKey;
+        this.baseUrl = 'https://www.aikonai.io/api/v1'; 
+    }
+
+    async chat(params) {
+        try {
+            const response = await fetch(`${this.baseUrl}/chat`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${this.apiKey}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    message: params.message,
+                    userInstruction: params.userInstruction || "You are a helpful AI."
+                })
+            });
+
+            if (!response.ok) {
+                const errorText = await response.text();
+                throw new Error(`HTTP Error ${response.status}: ${errorText}`);
+            }。
+
+            const data = await response.json();
+            return data;
+        } catch (e) {
+            console.error("Aikon Engine Error:", e);
+            throw e;
+        }
+    }
+}
+
+/* --- App Logic --- */
+let count = 0;
+let lastCount = 0;
+let isPaused = false;
+const JAP_TARGET = 108; // Default target for a mala round
+
+const counterDisplay = document.getElementById('counter-display');
+const targetDisplay = document.getElementById('target-display');
+const incrementBtn = document.getElementById('increment-btn');
+const decrementBtn = document.getElementById('decrement-btn');
+const resetBtn = document.getElementById('reset-btn');
+const pauseBtn = document.getElementById('pause-btn');
+const undoBtn = document.getElementById('undo-btn');
+
+function updateDisplay() {
+    counterDisplay.textContent = count;
+    targetDisplay.textContent = `/ ${JAP_TARGET}`;
+    
+    // Update button states based on pause status
+    if (isPaused) {
+        incrementBtn.disabled = true;
+        decrementBtn.disabled = true;
+        pauseBtn.textContent = 'Resume';
+    } else {
+        incrementBtn.disabled = false;
+        decrementBtn.disabled = false;
+        pauseBtn.textContent = 'Pause';
+    }
+    
+    // Update undo button state
+    undoBtn.disabled = (count === lastCount);
+
+    // Style feedback
+    if (count >= JAP_TARGET) {
+        counterDisplay.classList.add('complete');
+        incrementBtn.disabled = true;
+    } else {
+        counterDisplay.classList.remove('complete');
+    }
+}
+
+function increment() {
+    if (isPaused) return;
+    lastCount = count;
+    count++;
+    updateDisplay();
+}
+
+function decrement() {
+    if (isPaused) return;
+    lastCount = count;
+    if (count > 0) {
+        count--;
+    }
+    updateDisplay();
+}
+
+function reset() {
+    if (isPaused) return;
+    lastCount = count; // Save current state before reset
+    count = 0;
+    updateDisplay();
+}
+
+function togglePause() {
+    isPaused = !isPaused;
+    updateDisplay();
+}
+
+function undoLast() {
+    if (count === lastCount) return;
+    count = lastCount;
+    updateDisplay();
+}
+
+// Initial setup
+document.addEventListener('DOMContentLoaded', () => {
+    updateDisplay();
+    incrementBtn.addEventListener('click', increment);
+    decrementBtn.addEventListener('click', decrement);
+    resetBtn.addEventListener('click', reset);
+    pauseBtn.addEventListener('click', togglePause);
+    undoBtn.addEventListener('click', undoLast);
+});
+
+<!-- FILE: index.html -->
+html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radha Naam Jap Counter</title>
+    <style>
+        :root {
+            --bg-color: #10061f;
+            --card-bg: rgba(255, 255, 255, 0.05);
+            --card-border: rgba(255, 255, 255, 0.1);
+            --text-color: #ffffff;
+            --accent-color: #ff69b4; /* Hot Pink for Radha/Devotion */
+            --btn-bg: rgba(255, 105, 180, 0.15);
+            --btn-hover: rgba(255, 105, 180, 0.3);
+        }
+
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            overflow: auto;
+        }
+
+        .container {
+            text-align: center;
+            max-width: 400px;
+            width: 100%;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 30px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            margin-top: 0;
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        #counter-display {
+            font-size: 6em;
+            font-weight: 900;
+            line-height: 1;
+            color: var(--accent-color);
+            transition: color 0.3s ease, transform 0.1s ease;
+            display: block;
+            margin: 10px 0;
+        }
+
+        #counter-display.complete {
+            color: #4CAF50; /* Green when target hit */
+            animation: pulse 1.5s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.9; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        #target-display {
+            font-size: 1.2em;
+            opacity: 0.7;
+            margin-bottom: 20px;
+        }
+
+        .button-group {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .control-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        button {
+            padding: 15px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease, transform 0.1s ease, opacity 0.2s;
+            background-color: var(--btn-bg);
+            color: var(--text-color);
+            border: 1px solid var(--accent-color);
+        }
+
+        button:hover:not(:disabled) {
+            background-color: var(--btn-hover);
+            transform: translateY(-2px);
+        }
+        
+        button:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        #increment-btn {
+            grid-column: 1 / 3; /* Span first two columns */
+            font-size: 1.5em;
+            padding: 20px 15px;
+            border-color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        #increment-btn:hover:not(:disabled) {
+             background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        #pause-btn {
+            background-color: rgba(255, 165, 0, 0.2); /* Orange for pause/resume */
+            border-color: orange;
+        }
+        
+        #pause-btn:hover:not(:disabled) {
+            background-color: rgba(255, 165, 0, 0.35);
+        }
+
+        /* Utility Buttons */
+        .utility-btn {
+            background-color: rgba(140, 140, 140, 0.1);
+            border-color: #909090;
+        }
+        
+        .utility-btn:hover:not(:disabled) {
+            background-color: rgba(140, 140, 140, 0.2);
+        }
+
+        .footer {
+            margin-top: 20px;
+            font-size: 0.8em;
+            opacity: 0.5;
+        }
+        
+        /* For AI-powered chat (if added later) */
+        .ai-section {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid rgba(255, 105, 180, 0.2);
+            border-radius: 10px;
+            background: rgba(255, 105, 180, 0.05);
+        }
+        
+        .ai-section p {
+            margin: 0 0 10px 0;
+            font-style: italic;
+        }
+        
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>Radha Naam Jap Counter</h1>
+            <span id="counter-display">0</span>
+            <div id="target-display">/ 108</div>
+            
+            <div class="button-group">
+                <button id="increment-btn">+1 (Jap)</button>
+                <button id="undo-btn" class="utility-btn">Undo</button>
+            </div>
+            
+            <div class="control-row">
+                <button id="pause-btn">Pause</button>
+                <button id="reset-btn" class="utility-btn" style="flex-grow: 2;">Reset Counter</button>
+            </div>
+        </div>
+        
+        <div class="footer">
+            <p>Jai Shri Radhe Krishna 🙏</p>
+            <p>Built by Aikon Studios.</p>
+        </div>
+    </div>
+    
+    <script>
+        const API_KEY = "ak_rfew23bo6b1wnz9j2d3bz"; // Inserted via Tool Call
+        const ai = new AikonEngine({ apiKey: API_KEY });
+        
+        // --- Application Logic from script.js starts here ---
+        let count = 0;
+        let lastCount = 0;
+        let isPaused = false;
+        const JAP_TARGET = 108; // Default target for a mala round
+
+        const counterDisplay = document.getElementById('counter-display');
+        const targetDisplay = document.getElementById('target-display');
+        const incrementBtn = document.getElementById('increment-btn');
+        const decrementBtn = document.getElementById('decrement-btn');
+        const resetBtn = document.getElementById('reset-btn');
+        const pauseBtn = document.getElementById('pause-btn');
+        const undoBtn = document.getElementById('undo-btn');
+
+        function updateDisplay() {
+            counterDisplay.textContent = count;
+            targetDisplay.textContent = `/ ${JAP_TARGET}`;
+            
+            // Update button states based on pause status
+            if (isPaused) {
+                incrementBtn.disabled = true;
+                decrementBtn.disabled = true;
+                pauseBtn.textContent = 'Resume';
+            } else {
+                incrementBtn.disabled = false;
+                decrementBtn.disabled = false;
+                pauseBtn.textContent = 'Pause';
+            }
+            
+            // Update undo button state
+            undoBtn.disabled = (count === lastCount);
+
+            // Style feedback
+            if (count >= JAP_TARGET) {
+                counterDisplay.classList.add('complete');
+                // If target is hit, we stop incrementing but allow pause/undo/reset
+                incrementBtn.disabled = true; 
+            } else {
+                counterDisplay.classList.remove('complete');
+            }
+        }
+
+        function increment() {
+            if (isPaused || count >= JAP_TARGET) return;
+            lastCount = count;
+            count++;
+            updateDisplay();
+        }
+
+        function decrement() {
+            if (isPaused) return;
+            lastCount = count;
+            if (count > 0) {
+                count--;
+            }
+            updateDisplay();
+        }
+
+        function reset() {
+            if (isPaused) return;
+            // Only reset if current count isn't 0 or if explicitly confirmed/allowed. 
+            // For now, allowing immediate reset for simplicity.
+            lastCount = count; // Save current state before reset
+            count = 0;
+            updateDisplay();
+        }
+
+        function togglePause() {
+            isPaused = !isPaused;
+            updateDisplay();
+        }
+
+        function undoLast() {
+            if (count === lastCount) return;
+            count = lastCount;
+            updateDisplay();
+        }
+
+        // Initial setup
+        document.addEventListener('DOMContentLoaded', () => {
+            updateDisplay();
+            incrementBtn.addEventListener('click', increment);
+            decrementBtn.addEventListener('click', decrement);
+            resetBtn.addEventListener('click', reset);
+            pauseBtn.addEventListener('click', togglePause);
+            undoBtn.addEventListener('click', undoLast);
+        });
+        // --- Application Logic ends here ---
+    </script>
+</body>
+</html>
+<!-- Generated by Aikon -->
+</html>
